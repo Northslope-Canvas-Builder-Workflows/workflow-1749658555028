@@ -1,9 +1,9 @@
-import { Logger } from '../../utils/logger';
-import { SendGridClient } from '../../services/email/sendgrid-client';
-import { FoundryServiceFactory } from '../../services/foundry/foundry-service-factory';
-import { CandidateService } from '../../services/foundry/candidate-service';
+import { Logger } from "../../utils/logger";
+import { SendGridClient } from "../../services/email/sendgrid-client";
+import { FoundryServiceFactory } from "../../services/foundry/foundry-service-factory";
+import { CandidateService } from "../../services/foundry/candidate-service";
 
-const logger = new Logger('email-notification-activity');
+const logger = new Logger("email-notification-activity");
 
 export interface SendEmailParams {
   to_email: string;
@@ -25,14 +25,20 @@ export class EmailNotificationActivity {
 
   private async getCandidateService(): Promise<CandidateService> {
     if (!this.candidateService) {
-      this.candidateService = await FoundryServiceFactory.createCandidateService();
+      this.candidateService =
+        await FoundryServiceFactory.createCandidateService();
     }
     return this.candidateService;
   }
 
-  async sendNotificationEmail(score: string, candidateId: string): Promise<void> {
-    logger.info(`Sending notification email for candidate ${candidateId} with score ${score}`);
-    
+  async sendNotificationEmail(
+    score: string,
+    candidateId: string,
+  ): Promise<void> {
+    logger.info(
+      `Sending notification email for candidate ${candidateId} with score ${score}`,
+    );
+
     try {
       // Fetch candidate information from Foundry
       const service = await this.getCandidateService();
@@ -56,12 +62,19 @@ export class EmailNotificationActivity {
 
       // Determine email type based on score
       let emailParams: SendEmailParams;
-      
+
       if (scoreValue > 80) {
-        emailParams = this.createCongratulationEmail(candidate.email, candidate.name, scoreValue);
+        emailParams = this.createCongratulationEmail(
+          candidate.email,
+          candidate.name,
+          scoreValue,
+        );
         logger.info(`Sending congratulation email to ${candidate.email}`);
       } else {
-        emailParams = this.createRejectionEmail(candidate.email, candidate.name);
+        emailParams = this.createRejectionEmail(
+          candidate.email,
+          candidate.name,
+        );
         logger.info(`Sending rejection email to ${candidate.email}`);
       }
 
@@ -69,24 +82,32 @@ export class EmailNotificationActivity {
       emailParams.workflow_id = candidateId;
       emailParams.headers = {
         ...emailParams.headers,
-        'X-Workflow-Step': 'Email Notification',
-        'X-Activity-Type': 'candidate-notification',
-        'X-Candidate-Id': candidateId,
-        'X-Score': score
+        "X-Workflow-Step": "Email Notification",
+        "X-Activity-Type": "candidate-notification",
+        "X-Candidate-Id": candidateId,
+        "X-Score": score,
       };
 
       // Send the email
       const result = await this.emailClient.sendEmail(emailParams);
-      logger.info(`Email sent successfully to ${candidate.email} with status code: ${result.statusCode}`);
-      
+      logger.info(
+        `Email sent successfully to ${candidate.email} with status code: ${result.statusCode}`,
+      );
     } catch (error) {
-      logger.error(`Failed to send notification email for candidate ${candidateId}:`, error);
+      logger.error(
+        `Failed to send notification email for candidate ${candidateId}:`,
+        error,
+      );
       throw error;
     }
   }
 
-  private createCongratulationEmail(email: string, name: string, score: number): SendEmailParams {
-    const subject = 'Congratulations! Next Steps in Your Application';
+  private createCongratulationEmail(
+    email: string,
+    name: string,
+    score: number,
+  ): SendEmailParams {
+    const subject = "Congratulations! Next Steps in Your Application";
     const htmlContent = `
       <html>
         <head>
@@ -113,7 +134,9 @@ export class EmailNotificationActivity {
               </div>
               
               <p>Your qualifications and experience have impressed our team, and we would love to move forward with the next step in our hiring process.</p>
-              
+
+              <p>We thought about sending you a singing telegram, but our kazoos are in the shop, so this email will have to do!</p>
+
               <p><strong>Next Steps:</strong></p>
               <ul>
                 <li>Schedule a recruiter screening call</li>
@@ -141,12 +164,12 @@ export class EmailNotificationActivity {
     return {
       to_email: email,
       subject: subject,
-      html_content: htmlContent
+      html_content: htmlContent,
     };
   }
 
   private createRejectionEmail(email: string, name: string): SendEmailParams {
-    const subject = 'Thank You for Your Application';
+    const subject = "Thank You for Your Application";
     const htmlContent = `
       <html>
         <head>
@@ -167,7 +190,9 @@ export class EmailNotificationActivity {
               <p>Thank you for taking the time to apply for the position with our company. We truly appreciate your interest in joining our team.</p>
               
               <p>After careful consideration of your application and qualifications, we have decided to move forward with other candidates whose experience more closely aligns with our current needs.</p>
-              
+
+              <p>If you manage to teach your cat to code, please let us know &mdash; we might reconsider!</p>
+
               <p>Please know that this decision was not made lightly. We were impressed by many aspects of your background, and we encourage you to apply for future opportunities that may be a better fit.</p>
               
               <p>We wish you the very best in your job search and future career endeavors. Thank you again for considering us as a potential employer.</p>
@@ -186,7 +211,7 @@ export class EmailNotificationActivity {
     return {
       to_email: email,
       subject: subject,
-      html_content: htmlContent
+      html_content: htmlContent,
     };
   }
 }
